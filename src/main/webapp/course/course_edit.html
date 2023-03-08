@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>课程修改页面</title>
+    <link rel="stylesheet" type="text/css"
+          href="../css/student.css">
+    <script type="text/javascript" src="../js/jquery-1.11.3.min.js"></script>
+    <style>
+        /*body {*/
+        /*    text-align: center*/
+        /*}*/
+
+        .divcss5 {
+            margin: 0 auto;
+            width: 400px;
+            height: 100px
+        }
+    </style>
+</head>
+    <script type="text/javascript">
+
+        $(document).ready(function () {
+            let x = window.location.href.slice(window.location.href.indexOf('=') + 1 );
+            show_input(x);
+
+        });
+        function show_input(id) {
+            // window.local.href="course_edit.html";
+            $('#coursesEditDiv').css('display', 'block');
+            if (id != -1) {
+                $('#frmTitle').text("课程信息修改");
+                $.get("../CourseAction?action=get&id=" + id,			//servlet
+                    function (data) {
+                        ShowData(eval(data));
+                    },	//JSON数据处理函数
+                    "JSON");									//JSON
+            } else {
+                $('#frmTitle').text("课程信息添加");
+                ClearData();
+            }
+        }
+        function ClearData() {
+            $("#id").val(-1);
+            $("#name").val("");
+            $("#type").val("");
+            $("input[type=radio][name=sex][value='" + 0 + "']").prop("checked", true);
+            $("#grade").val("");
+            $("#major").val(1);
+            $("#detail").val("");
+        }
+        function ShowData(course) {
+            $("#id").val(course["id"]);
+            $("#name").val(course["name"]);
+            $("#type").val(course["type"]);
+            $("#credit").val(course["credit"]);
+            $("#grade").val(course["grade"]);
+            $("input[type=radio][name=major][value='" + course["major"] + "']").prop("checked", true);
+            $("#detail").val(course["detail"]);
+        }
+        function submitData() {
+            // var re = /\d+\.?\d/;
+            // if (!re.test($("#credit").val())) {
+            //     alert("请输入学分!");
+            //     $("#credit").focus();
+            //     return;
+            // }
+            re = /\S{5,20}/;
+            if (!re.test($("#name").val())) {
+                alert("请输入5~20个字符的课程名!");
+                $("#name").focus();
+                return;
+            }
+            re = /20[0-9]{2}/;
+            if (!re.test($("#grade").val())) {
+                alert("请输入4位整数年份20xx!");
+                $("#grade").focus();
+                return;
+            }
+            $.ajax({
+                cache: true,
+                type: "POST",
+                url: "../CourseAction?action=update",
+                data: $("#courseFrm").serialize(),
+                async: false,
+                error: function (request) {
+                    alert("Connection error");
+                },
+                success: function (data) {
+                    if (data == "0") {
+                        alert("数据处理不成功");
+                    } else {
+                        $("#coursesEditDiv").css("display", "none");
+                        alert("数据处理成功!");
+                        self.location = document.referrer;
+                        getList();
+                    }
+                }
+            });
+
+        }
+    </script>
+<body>
+<div id="coursesEditDiv" class="divcss5">
+    <form name="frm" id="courseFrm" method="post" action="../servlet/CourseUpdateAction">
+        <input type="hidden" name="id" id="id" value="">
+        <table border=1>
+            <tr class="td_header">
+                <td colspan="2"><span id="frmTitle">课程信息修改</span>，<span class="star">*</span>为必填项</td>
+            </tr>
+            <tr>
+                <td>名称</td>
+                <td><input type="text" name="name" id="name" value="" size="20" maxlength="20"
+                           onchange="checkCode();"><span class="star">*</span>5~20位字符<span
+                        id="codeSpan"></span></td>
+            </tr>
+            <tr>
+                <td>性质</td>
+                <td><select name="type" id="type" size='1'>
+                    <option value='1'>公共基础必修课</option>
+                    <option value='2'>公共选修课</option>
+                    <option value='3'>学科基础课</option>
+                    <option value='4'>专业选修课</option>
+                    <option value='5'>专业必修课</option>
+                    <option value='6'>集中性实践教学节</option>
+                </select><span class="star">*</span></td>
+            </tr>
+            <tr>
+                <td>学分</td>
+                <td>
+                    <input type="number" name="credit" id="credit">
+                    <span class="star">*</span>数值
+                </td>
+            </tr>
+            <tr>
+                <td>开设年级</td>
+                <td><input type="text" name="grade" id="grade" value="" size="20" maxlength="4"><span
+                        class="star">*</span>4位数年份
+                </td>
+            </tr>
+            <tr>
+                <td>开设专业</td>
+                <td>
+                    <input type="radio" name="major" id="major1" value="1">软件工程
+                    <input type="radio" name="major" id="major2" value="2">空间信息
+                    <input type="radio" name="major" id="major3" value="3">大数据
+                    <span class="star">*</span>
+                </td>
+            </tr>
+            <tr>
+                <td>备注</td>
+                <td><TEXTAREA name="detail" id="detail" rows="3" cols="20"
+                              onpropertychange="if(this.value.length>200) {this.value=value.substr(0,200);alert('描述最多20个字符!');}"></TEXTAREA>200个字符以内
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" align="center"><input type="button" value="提交" onclick="submitData();"></td>
+            </tr>
+        </table>
+    </form>
+</div>
+</body>
+</html>

@@ -1,0 +1,71 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link rel="stylesheet" type="text/css" href="./css/student.css">
+<script type="text/javascript" src="./js/jquery-1.11.3.min.js"></script>
+</head>  
+<body>
+  <center>									 
+   <form name="frm" method="post" >
+   <table border=0>
+	<tr class="td_header"><td colspan="2"> 请输入用于查询的学生学号：</td></tr>
+   <tr><td><input type="text" name="code" value="" size="20" maxlength="5"></td><td><input type="button"  value="查询" onclick="check();"></td></tr>
+   </table>   
+   </form>
+  
+   
+   <table border="1" bordercolor="#000000" cellpadding="5" cellspacing="0" width="60%" >
+	  <tr>
+	    <td width="60%"  id="dataTable" align="center">显示获取的数据</td>
+	  </tr>
+	</table>
+ 
+	<br>
+ <a href="JavaScript:showChart();">显示JfreeChart图标</a><div id="jfreechart"></div>
+ </center>
+  </body>
+</html>
+<script language="JavaScript">
+function check(){ 
+	if(frm.code.value.length!=5){
+		alert("请输入5位字符数字的学号!");
+		frm.code.focus();
+		return ;
+	}
+	
+	$.get("ScoreAction?Action=GetStudentScoresByAjax&code="+frm.code.value,				//servlet
+			function(data) { WriteStList(eval(data)); }, 	//JSON数据处理函数
+			"JSON");										//JSON
+}
+
+function WriteStList(data){
+	var strHtml="";
+	strHtml+="<table border='1' width='90%' align='center'><tr class='td_header' align='center'><td>序号</td><td>课程名称</td><td>分数</td></tr>";
+	for(var i=0;i<data.length;i++){
+		strHtml+="<tr align='center'><td>"+(i+1)+"</td>";
+		strHtml+="<td>"+data[i]["courseName"]+"</td>";
+		strHtml+="<td>"+data[i]["score"]+"</td></tr>";	
+	}
+	strHtml+="</table>";	
+    if (data.length != 0) {       
+		document.getElementById("dataTable").innerHTML=strHtml;
+    }else{
+    	document.getElementById("dataTable").innerHTML="该学号不存在，或者该学生没有成绩信息！";
+    }
+}  
+ 
+function showChart(){
+	if(frm.code.value.length!=5){
+		alert("请输入5位字符数字的学号!");
+		frm.code.focus();
+		return ;
+	}
+	
+	$.get("StudentScoreChart?code="+frm.code.value,				//servlet
+		function(data) { 
+			$("#jfreechart").html("<img src=\""+data+"\">");
+		}
+	);										 
+
+}
+</script>

@@ -1,0 +1,161 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link rel="stylesheet" type="text/css" href="./css/student.css">
+<script type="text/javascript" src="./js/jquery-1.11.3.min.js"></script>
+</head>  
+  <body>
+  <center>									 
+   <form name="frm" id="frm" method="post" >
+    <input type="hidden" name="Action" value="UpdateCourseScores">   
+   <table border=0 width="60%">
+	<tr class="td_header"><td  colspan="2">按课程查询</td></tr>
+   <tr><td>
+        专业
+      <select name="major" id="majorID" onchange="getGrade();">
+      <option value="0">- -</option>
+      <option value="1">软件工程</option>
+      <option value="2">空间信息</option>
+      <option value="3">大数据</option>
+      </select>
+       年级
+      <select name="grade" id="gradeID"  onchange="getCourse();">
+      <option value="0">- -</option>
+      </select>
+      课程
+      <select name="courseID" id="courseID" onchange="getScore();">
+      <option value="0">- -</option>
+      </select>
+      </td>
+      <td> <input type="button" name="saveBT" id="saveBT" value="修改" onclick="Save();"></td>
+   </table> 
+   
+   <table border="1" bordercolor="#000000" cellpadding="5" cellspacing="0" width="60%" >
+	  <tr>
+	    <td width="60%"  id="dataTable" align="center">显示获取的数据</td>
+	  </tr>
+	</table>
+   </form>
+  
+ </center>
+  </body>
+</html>
+<script>
+   var scoreData;//保存查询出来的分数的JSON数据，可用于显示和修改
+   var updateFlag=0;//分数是否待修改，0/1 否/是
+   function getGrade() { 
+		var major=$("#majorID").val(); 
+		if(major==0) return;
+
+		$.get("ScoreAction?Action=GetGradesByAjax&major="+major,				//servlet
+				function(data) { createGrade(eval(data)); }, 	//JSON数据处理函数
+				"JSON");										//JSON
+  }
+
+  function createGrade(gradedata){  
+	var selectObj=document.getElementById("gradeID");
+	//删除列表中原有数据
+	for(var i=selectObj.length-1;i>0;i--){
+		selectObj.options.remove(i);
+	}
+	var selectObj1=document.getElementById("courseID");
+	//删除列表中原有数据
+	for(var i=selectObj1.length-1;i>0;i--){
+		selectObj1.options.remove(i);
+	}
+	for(i=0;i<gradedata.length;i++){
+		op=new Option(gradedata[i]["grade"],gradedata[i]["grade"]);
+		selectObj.options.add(op);
+	}
+	selectObj.selectedIndex=0;
+  } 
+
+  function getCourse() {
+	var selectObj=document.getElementById("majorID");
+	var major=selectObj[selectObj.selectedIndex].value;
+	selectObj=document.getElementById("gradeID");
+	grade=selectObj[selectObj.selectedIndex].value;
+	if(grade==0) return;
+
+	$.get("ScoreAction?Action=GetCoursesByAjax&major="+major+"&grade="+grade,				//servlet
+			function(data) { createCourse(eval(data)); }, 	//JSON数据处理函数
+			"JSON");								//JSON
+  }
+  function createCourse(courseData){ 
+	var selectObj=document.getElementById("courseID");
+	//删除列表中原有数据
+	for(var i=selectObj.length-1;i>0;i--){
+		selectObj.options.remove(i);
+	}
+	for(i=0;i<courseData.length;i++){
+		op=new Option(courseData[i]["courseName"],courseData[i]["courseID"]);
+		selectObj.options.add(op);
+	}
+	selectObj.selectedIndex=0;
+
+  } 
+ 
+	function getScore() { 
+		document.getElementById("dataTable").innerHTML="显示获取的数据";
+		var courseID=$("#courseID").val(); 
+		if(courseID==0) return;
+		
+		$.get("ScoreAction?Action=GetCourseAllScoresByAjax&courseID="+courseID,				//servlet
+				function(data) { //JSON数据处理函数
+					scoreData=eval(data);   //保存JSON数据
+					updateFlag=0;
+					createScore( ); }, 	 
+				"JSON");								//JSON
+	}
+  
+	  function createScore( ){  
+		  	var strHtml="<table border='1' width='90%' align='center'><tr class='td_header' align='center'><td>序号</td><td>学号</td><td>姓名</td><td>分数</td></tr>";
+	        for (var i = 0; i < scoreData.length; i++) {
+	        	if(updateFlag==0){
+	        		strHtml+="<tr align='center'><td>"+(i+1)+"</td>";
+	        	}else{
+	        		strHtml+="<tr align='center'><td>"+(i+1);"<input type='hidden' name='stID' value='"+scoreData[i]["stID"]+"'></td>";
+	        		strHtml+="<input type='hidden' name='stID' value='"+scoreData[i]["stID"]+"'>";
+	        		strHtml+="<input type='hidden' name='stCode' value='"+scoreData[i]["stCode"]+"'></td>";
+	        	}
+	        	strHtml+="<td>"+scoreData[i]["stCode"]+"</td>";
+	        	strHtml+="<td>"+scoreData[i]["stName"]+"</td>";
+	        	if(updateFlag==0){
+	        		strHtml+="<td>"+scoreData[i]["score"]+"</td></tr>";
+	        	}else{
+	        		strHtml+="<td><input type='text' name='score' value='"+scoreData[i]["score"]+"'></td></tr>";
+	        	}	        	
+	        }
+	        strHtml+="</table>" ;		    
+		   	if (scoreData.length != 0) {
+				document.getElementById("dataTable").innerHTML=strHtml;
+		    }else{
+		    	document.getElementById("dataTable").innerHTML="该课程没有学生成绩信息！";
+		    }
+	  } 
+	  function Save(){
+		  if(updateFlag==0){
+			  updateFlag=1;
+			  createScore( );
+			  $("#saveBT").val("保存");
+		  }else{
+				var courseID=$("#courseID").val(); 
+				$.ajax({
+					cache: true,
+					type: "POST",
+					url:"ScoreAction",
+					data:$("#frm").serialize(), 
+					async: false,
+				    error: function(request) {
+				        alert("Connection error");
+				    },
+				    success: function(data) {
+				    	$("#saveBT").val("修改");
+				    	alert(data);
+				    	getScore();
+				    }
+				});
+		  }
+	  }
+ 
+</script>
